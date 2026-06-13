@@ -51,7 +51,7 @@ Main Features
         ],
     },
     'images': [
-        'static/description/image (9).png',
+        'static/description/banner.gif',
         'static/description/icon.png',
     ],
     'installable': True,
