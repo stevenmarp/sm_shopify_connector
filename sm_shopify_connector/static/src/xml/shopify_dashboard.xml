@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="sm_shopify_connector.Dashboard">
+        <Layout display="display" className="'o_sm_shopify_dashboard h-100'">
+            <div class="o_action sm_shopify_dashboard h-100 overflow-auto">
+                <div class="sm_dashboard_header">
+                    <h1><span class="sm_dashboard_logo">S</span><t t-esc="title"/></h1>
+                    <div class="sm_dashboard_actions">
+                        <button type="button" class="btn btn-sync" t-on-click="loadData"><i class="fa fa-refresh"/> Refresh</button>
+                        <button type="button" class="btn btn-config" t-on-click="resetFilters"><i class="fa fa-undo"/> Reset Filters</button>
+                    </div>
+                </div>
+
+                <div class="sm_stats_row">
+                    <div class="sm_stat_card card_stores" t-on-click="openStores"><div class="stat_icon"><i class="fa fa-shopping-bag"/></div><div class="stat_value" t-esc="state.summary.stores"/><div class="stat_label">Stores</div></div>
+                    <div class="sm_stat_card card_connected" t-on-click="openStores"><div class="stat_icon"><i class="fa fa-plug"/></div><div class="stat_value" t-esc="state.summary.connected"/><div class="stat_label">Connected</div></div>
+                    <div class="sm_stat_card card_products" t-on-click="openProducts"><div class="stat_icon"><i class="fa fa-cube"/></div><div class="stat_value" t-esc="state.summary.products"/><div class="stat_label">Products</div></div>
+                    <div class="sm_stat_card card_customers" t-on-click="openCustomers"><div class="stat_icon"><i class="fa fa-users"/></div><div class="stat_value" t-esc="state.summary.customers"/><div class="stat_label">Customers</div></div>
+                    <div class="sm_stat_card card_orders" t-on-click="openOrders"><div class="stat_icon"><i class="fa fa-shopping-cart"/></div><div class="stat_value" t-esc="state.summary.orders"/><div class="stat_label">Orders</div></div>
+                    <div class="sm_stat_card card_failed" t-on-click="() => this.openLogs([['state', '=', 'failed']])">
+                        <div class="stat_icon"><i class="fa fa-exclamation-circle"/></div>
+                        <div class="stat_value" t-esc="state.summary.failed"/>
+                        <div class="stat_label">Failed Logs</div>
+                        <t t-if="state.summary.failed"><div class="stat_change negative"><i class="fa fa-warning"/> Needs attention</div></t>
+                    </div>
+                </div>
+
+                <div class="sm_filter_panel">
+                    <h3><i class="fa fa-filter"/> Dashboard Filters</h3>
+                    <div class="sm_filter_grid">
+                        <div class="sm_filter_item">
+                            <label>From</label>
+                            <input type="date" class="form-control" t-att-value="state.filters.date_from" t-on-change="(ev) => this.onDateChange('date_from', ev)"/>
+                        </div>
+                        <div class="sm_filter_item">
+                            <label>To</label>
+                            <input type="date" class="form-control" t-att-value="state.filters.date_to" t-on-change="(ev) => this.onDateChange('date_to', ev)"/>
+                        </div>
+                        <div class="sm_filter_item">
+                            <label>Store</label>
+                            <select class="form-select" t-att-value="state.filters.instance_id" t-on-change="onInstanceChange">
+                                <option value="">All Stores</option>
+                                <t t-foreach="state.options.instances" t-as="instance" t-key="instance.id">
+                                    <option t-att-value="instance.id" t-esc="instance.name"/>
+                                </t>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="sm_filter_footer">
+                        <div class="sm_preset_group">
+                            <button type="button" class="btn btn-light btn-sm" t-on-click="() => this.setPreset(7)">7 Days</button>
+                            <button type="button" class="btn btn-light btn-sm" t-on-click="() => this.setPreset(30)">30 Days</button>
+                            <button type="button" class="btn btn-light btn-sm" t-on-click="() => this.setPreset(90)">90 Days</button>
+                        </div>
+                        <div class="sm_state_pills">
+                            <t t-foreach="state.options.operations" t-as="item" t-key="item.code">
+                                <button type="button" t-attf-class="sm_state_pill {{ isOperationActive(item.code) ? 'active' : '' }}" t-on-click="() => this.toggleOperation(item.code)"><t t-esc="item.name"/></button>
+                            </t>
+                        </div>
+                        <div class="sm_state_pills">
+                            <t t-foreach="state.options.states" t-as="item" t-key="item.code">
+                                <button type="button" t-attf-class="sm_state_pill state_{{ item.code }} {{ isStateActive(item.code) ? 'active' : '' }}" t-on-click="() => this.toggleState(item.code)"><t t-esc="item.name"/></button>
+                            </t>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-sm" t-on-click="loadData"><i class="fa fa-filter"/> Apply</button>
+                    </div>
+                </div>
+
+                <div t-if="state.loading" class="sm_empty_panel">
+                    <i class="fa fa-spinner fa-spin fa-2x"/>
+                    <p>Loading dashboard...</p>
+                </div>
+                <t t-else="">
+                    <div class="row sm_dashboard_row">
+                        <div class="col-lg-8">
+                            <div class="sm_activity_panel">
+                                <h3><i class="fa fa-history"/> Recent Sync Logs</h3>
+                                <table class="sm_activity_table">
+                                    <thead>
+                                        <tr><th>Date</th><th>Store</th><th>Operation</th><th>Status</th><th>Records</th><th>Message</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-if="!state.recent.length"><td colspan="6" class="text-center text-muted py-4"><i class="fa fa-inbox fa-2x mb-2 d-block"/> No sync logs found</td></tr>
+                                        <t t-foreach="state.recent" t-as="log" t-key="log.id">
+                                            <tr t-on-click="() => this.openLog(log.id)">
+                                                <td t-esc="log.date"/>
+                                                <td t-esc="log.instance"/>
+                                                <td t-esc="log.operation_label"/>
+                                                <td><span t-attf-class="badge badge_{{ stateClass(log.state) }}" t-esc="log.state_label"/></td>
+                                                <td t-esc="log.records"/>
+                                                <td class="sm_log_message" t-esc="log.message"/>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="sm_activity_panel">
+                                <h3><i class="fa fa-shopping-bag"/> Store Status</h3>
+                                <div class="sm_status_cards">
+                                    <t t-foreach="state.cards" t-as="card" t-key="card.id">
+                                        <div class="sm_status_card" t-on-click="() => this.openStore(card.id)">
+                                            <div class="status_header">
+                                                <span class="status_name"><i class="fa fa-shopping-bag"/> <t t-esc="card.name"/></span>
+                                                <span t-attf-class="badge badge_{{ stateClass(card.state) }}" t-esc="card.state_label"/>
+                                            </div>
+                                            <small t-esc="card.shop_url"/>
+                                            <div class="status_stats">
+                                                <div><div class="value" t-esc="card.products"/><div class="label">Products</div></div>
+                                                <div><div class="value" t-esc="card.customers"/><div class="label">Customers</div></div>
+                                                <div><div class="value" t-esc="card.logs"/><div class="label">Logs</div></div>
+                                            </div>
+                                        </div>
+                                    </t>
+                                    <div t-if="!state.cards.length" class="text-center text-muted py-4"><i class="fa fa-inbox fa-2x mb-2 d-block"/> No Shopify store configured</div>
+                                </div>
+                            </div>
+                            <div class="sm_activity_panel">
+                                <h3><i class="fa fa-bar-chart"/> Sync Activity</h3>
+                                <div class="sm_activity_chart">
+                                    <t t-foreach="state.activity.labels" t-as="label" t-key="label_index">
+                                        <span t-att-style="barHeight(state.activity.total[label_index], state.activity.max)" t-att-title="label"/>
+                                    </t>
+                                </div>
+                                <div class="sm_chart_legend"><span><i class="fa fa-square success"/> Success <t t-esc="state.summary.success"/></span><span><i class="fa fa-square danger"/> Failed <t t-esc="state.summary.failed"/></span></div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </div>
+        </Layout>
+    </t>
+</templates>
