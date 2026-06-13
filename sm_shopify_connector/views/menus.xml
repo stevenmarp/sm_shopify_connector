@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_sm_shopify_connector_root" name="Shopify" sequence="45" web_icon="sm_shopify_connector,static/description/icon.png" action="action_shopify_instance" groups="sm_shopify_connector.group_shopify_connector_user"/>
+    <menuitem id="menu_sm_shopify_connector_instance" name="Stores" parent="menu_sm_shopify_connector_root" action="action_shopify_instance" sequence="10"/>
+    <menuitem id="menu_sm_shopify_connector_products" name="Products" parent="menu_sm_shopify_connector_root" action="action_shopify_products" sequence="20"/>
+    <menuitem id="menu_sm_shopify_connector_customers" name="Customers" parent="menu_sm_shopify_connector_root" action="action_shopify_customers" sequence="30"/>
+    <menuitem id="menu_sm_shopify_connector_orders" name="Orders" parent="menu_sm_shopify_connector_root" action="action_shopify_orders" sequence="40"/>
+</odoo>
